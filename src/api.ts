@@ -36,6 +36,16 @@ export interface StatusHistoryEntry {
   notes: string | null;
 }
 
+export interface ProofOfDelivery {
+  id: string;
+  loadId: string;
+  recipientName: string;
+  signatureBase64: string;
+  photoBase64: string | null;
+  notes: string;
+  createdAt: string;
+}
+
 // ── Post a new load (authenticated shipper) ────────────────────────────
 export const postLoad = createServerFn({ method: "POST" })
   .validator(
@@ -249,6 +259,81 @@ export const fetchStatusHistory = createServerFn({ method: "GET" })
       locationLng: r.location_lng,
       notes: r.notes,
     })) as StatusHistoryEntry[];
+  });
+
+// ── Submit proof of delivery ────────────────────────────────────────────
+export const submitProofOfDelivery = createServerFn({ method: "POST" })
+  .validator(
+    (data: {
+      loadId: string;
+      recipientName: string;
+      signatureBase64: string;
+      photoBase64: string | null;
+      notes: string;
+    }) => data,
+  )
+  .handler(async ({ data }) => {
+    const { getSessionUser } = await import("~/auth.server");
+    const { getDb } = await import("~/db");
+    const user = getSessionUser();
+    if (!user) throw new Error("You must be logged in.");
+
+    const db = getDb();
+    const now = new Date().toISOString();
+    const podId = `pod-${crypto.randomUUID().slice(0, 8)}`;
+
+    db.prepare(`
+      INSERT INTO proof_of_delivery (id, load_id, recipient_name, signature_base64, photo_base64, notes, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      podId,
+      data.loadId,
+      data.recipientName,
+      data.signatureBase64,
+      data.photoBase64,
+      data.notes,
+      now,
+    );
+
+    // Also record in status history
+    const shId = `sh-${crypto.randomUUID().slice(0, 8)}`;
+    db.prepare(`
+      INSERT INTO status_history (id, load_id, status, timestamp, location_lat, location_lng, notes)
+      VALUES (?, ?, 'delivered', ?, NULL, NULL, ?)
+    `).run(shId, data.loadId, now, `Signed by ${data.recipientName}`);
+
+    return {
+      id: podId,
+      loadId: data.loadId,
+      recipientName: data.recipientName,
+      signatureBase64: data.signatureBase64,
+      photoBase64: data.photoBase64,
+      notes: data.notes,
+      createdAt: now,
+    } as ProofOfDelivery;
+  });
+
+// ── Fetch proof of delivery for a load ───────────────────────────────────
+export const fetchProofOfDelivery = createServerFn({ method: "GET" })
+  .validator((loadId: string) => loadId)
+  .handler(async ({ data: loadId }) => {
+    const { getDb } = await import("~/db");
+    const db = getDb();
+    const row = db.prepare(`
+      SELECT * FROM proof_of_delivery WHERE load_id = ? ORDER BY created_at DESC LIMIT 1
+    `).get(loadId) as any;
+
+    if (!row) return null;
+
+    return {
+      id: row.id,
+      loadId: row.load_id,
+      recipientName: row.recipient_name,
+      signatureBase64: row.signature_base64,
+      photoBase64: row.photo_base64,
+      notes: row.notes,
+      createdAt: row.created_at,
+    } as ProofOfDelivery;
   });
 
 // ── Helper: map DB row to client Load type ──────────────────────────────

@@ -91,6 +91,16 @@ export interface StatusHistoryRow {
   notes: string | null;
 }
 
+export interface ProofOfDeliveryRow {
+  id: string;
+  load_id: string;
+  recipient_name: string;
+  signature_base64: string;
+  photo_base64: string | null;
+  notes: string;
+  created_at: string;
+}
+
 export interface SessionRow {
   id: string;
   user_id: string;
@@ -177,6 +187,16 @@ function initSchema(db: any) {
       location_lat REAL,
       location_lng REAL,
       notes TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS proof_of_delivery (
+      id TEXT PRIMARY KEY,
+      load_id TEXT NOT NULL REFERENCES loads(id) ON DELETE CASCADE,
+      recipient_name TEXT NOT NULL,
+      signature_base64 TEXT NOT NULL,
+      photo_base64 TEXT,
+      notes TEXT DEFAULT '',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
   `);
 }
