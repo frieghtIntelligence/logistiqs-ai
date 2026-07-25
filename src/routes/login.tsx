@@ -1,0 +1,143 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
+import { login } from "~/auth";
+
+export const Route = createFileRoute("/login")({
+  component: LoginPage,
+});
+
+function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const result = await login({ email: email.trim(), password });
+
+      if (result.success) {
+        // Set the session cookie and redirect
+        document.cookie = `logistiqs_session=${result.token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+        // Force a full page reload so the server picks up the cookie
+        window.location.href = result.user.role === "carrier" ? "/carrier" : "/shipper";
+      } else {
+        setError(result.error);
+      }
+    } catch (err) {
+      setError("An error occurred. Please try again.");
+      console.error("Login error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex min-h-[calc(100dvh-57px)] items-center justify-center px-4 py-12">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <Link to="/" className="inline-flex items-center gap-2.5 group">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-500 text-white font-bold text-sm shadow-sm">
+              LI
+            </div>
+            <span className="text-lg font-bold tracking-tight text-gray-900 dark:text-white">
+              LOGISTIQS<span className="text-orange-500">IQ</span>
+            </span>
+          </Link>
+          <h1 className="mt-6 text-2xl font-bold text-gray-900 dark:text-white">
+            Welcome back
+          </h1>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            Sign in to your account to continue.
+          </p>
+        </div>
+
+        <form
+          onSubmit={handleSubmit}
+          className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900 sm:p-8"
+        >
+          {error && (
+            <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300">
+              {error}
+            </div>
+          )}
+
+          <div className="space-y-5">
+            <div>
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+              >
+                Email address
+              </label>
+              <input
+                id="email"
+                type="email"
+                required
+                autoComplete="email"
+                placeholder="you@company.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+              >
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                required
+                autoComplete="current-password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-xl bg-orange-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-500/25 transition-all hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loading ? (
+                <span className="inline-flex items-center gap-2">
+                  <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Signing in…
+                </span>
+              ) : (
+                "Sign in"
+              )}
+            </button>
+          </div>
+
+          <div className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
+            Don&apos;t have an account?{" "}
+            <Link to="/signup" className="font-medium text-orange-500 hover:text-orange-400">
+              Create one
+            </Link>
+          </div>
+
+          <div className="mt-4 rounded-lg bg-gray-50 p-3 text-xs text-gray-500 dark:bg-gray-800 dark:text-gray-500">
+            <p className="font-medium mb-1">Demo accounts (password: password123)</p>
+            <p>Shipper: kansanshi@example.com</p>
+            <p>Carrier: crossborder@example.com</p>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}

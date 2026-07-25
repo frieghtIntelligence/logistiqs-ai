@@ -1,6 +1,31 @@
 import { Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { getCurrentUser, logout } from "~/auth";
 
 export function NavBar() {
+  const [user, setUser] = useState<{
+    id: string;
+    email: string;
+    name: string;
+    role: "shipper" | "carrier";
+    company_name: string;
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getCurrentUser()
+      .then((u) => setUser(u))
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleLogout = async () => {
+    await logout();
+    document.cookie = "logistiqs_session=; path=/; max-age=0";
+    setUser(null);
+    window.location.href = "/";
+  };
+
   return (
     <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 dark:border-gray-800 dark:bg-gray-950/95 dark:supports-[backdrop-filter]:bg-gray-950/80">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
@@ -35,6 +60,32 @@ export function NavBar() {
           >
             Find Loads
           </Link>
+
+          {/* Auth section */}
+          <div className="ml-2 border-l border-gray-200 pl-2 dark:border-gray-700">
+            {loading ? (
+              <span className="px-3.5 py-2 text-sm text-gray-400">…</span>
+            ) : user ? (
+              <div className="flex items-center gap-2">
+                <span className="hidden text-xs text-gray-500 dark:text-gray-400 sm:inline">
+                  {user.company_name}
+                </span>
+                <button
+                  onClick={handleLogout}
+                  className="rounded-lg px-3 py-1.5 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-red-600 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-red-400"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <Link
+                to="/login"
+                className="rounded-lg px-3.5 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+              >
+                Sign In
+              </Link>
+            )}
+          </div>
         </nav>
       </div>
     </header>
