@@ -3,7 +3,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { lookupCoords } from "~/db";
 
-// ── Load type exposed to the client ─────────────────────────────────────
+// ── Types exposed to the client ─────────────────────────────────────────
+export type LoadStatus = "posted" | "accepted" | "departed" | "in-transit" | "border-crossing" | "arrived" | "delivered";
+
 export interface Load {
   id: string;
   shipperName: string;
@@ -15,12 +17,23 @@ export interface Load {
   pickupDate: string;
   deliveryDeadline: string;
   notes: string;
-  status: "posted" | "accepted" | "in-transit" | "delivered";
+  status: LoadStatus;
   carrierName: string | null;
   carrierId: string | null;
   createdAt: string;
   originCoords: { lat: number; lng: number };
   destCoords: { lat: number; lng: number };
+  currentLocation: { lat: number; lng: number } | null;
+}
+
+export interface StatusHistoryEntry {
+  id: string;
+  loadId: string;
+  status: string;
+  timestamp: string;
+  locationLat: number | null;
+  locationLng: number | null;
+  notes: string | null;
 }
 
 // ── Post a new load (authenticated shipper) ────────────────────────────
@@ -62,6 +75,13 @@ export const postLoad = createServerFn({ method: "POST" })
       data.cargoType, data.weight, data.pickupDate, data.deliveryDeadline, data.notes.trim(),
       now, now,
     );
+
+    // Record initial status in history
+    const shId = `sh-${crypto.randomUUID().slice(0, 8)}`;
+    db.prepare(`
+      INSERT INTO status_history (id, load_id, status, timestamp, location_lat, location_lng, notes)
+      VALUES (?, ?, 'posted', ?, ?, ?, ?)
+    `).run(shId, loadId, now, originCoords.lat, originCoords.lng, null);
 
     const row = db.prepare(`
       SELECT l.*, s.name as shipper_name, c.name as carrier_name
@@ -118,6 +138,13 @@ export const takeLoad = createServerFn({ method: "POST" })
 
     if (result.changes === 0) return null;
 
+    // Record acceptance in status history
+    const shId = `sh-${crypto.randomUUID().slice(0, 8)}`;
+    db.prepare(`
+      INSERT INTO status_history (id, load_id, status, timestamp, location_lat, location_lng, notes)
+      VALUES (?, ?, 'accepted', ?, NULL, NULL, ?)
+    `).run(shId, data.loadId, now, `${user.company_name} accepted this load`);
+
     const row = db.prepare(`
       SELECT l.*, s.name as shipper_name, c.name as carrier_name
       FROM loads l JOIN users s ON s.id = l.shipper_id LEFT JOIN users c ON c.id = l.carrier_id
@@ -129,7 +156,63 @@ export const takeLoad = createServerFn({ method: "POST" })
 // ── Advance load status ─────────────────────────────────────────────────
 export const advanceLoadStatus = createServerFn({ method: "POST" })
   .validator(
-    (data: { loadId: string; status: "in-transit" | "delivered" }) => data,
+    (data: {
+      loadId: string;
+      status: "departed" | "in-transit" | "border-crossing" | "arrived" | "delivered";
+      locationLat?: number;
+      locationLng?: number;
+      notes?: string;
+    }) => data,
+  )
+  .handler(async ({ data }) => {
+    const { getSessionUser } = await import("~/auth.server");
+    const { getDb } = await import("~/db");
+    const user = getSessionUser();
+    if (!user) throw new Error("You must be logged in.");
+
+    // Only the assigned carrier can advance status
+    const db = getDb();
+    const now = new Date().toISOString();
+    const result = db.prepare(`
+      UPDATE loads SET status = ?, updated_at = ? WHERE id = ? AND carrier_id = ?
+    `).run(data.status, now, data.loadId, user.id);
+
+    if (result.changes === 0) return null;
+
+    // Also update location if provided
+    if (data.locationLat != null && data.locationLng != null) {
+      db.prepare(`
+        UPDATE loads SET current_location_lat = ?, current_location_lng = ? WHERE id = ?
+      `).run(data.locationLat, data.locationLng, data.loadId);
+    }
+
+    // Record in status history
+    const historyId = `sh-${crypto.randomUUID().slice(0, 8)}`;
+    db.prepare(`
+      INSERT INTO status_history (id, load_id, status, timestamp, location_lat, location_lng, notes)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      historyId,
+      data.loadId,
+      data.status,
+      now,
+      data.locationLat ?? null,
+      data.locationLng ?? null,
+      data.notes ?? null,
+    );
+
+    const row = db.prepare(`
+      SELECT l.*, s.name as shipper_name, c.name as carrier_name
+      FROM loads l JOIN users s ON s.id = l.shipper_id LEFT JOIN users c ON c.id = l.carrier_id
+      WHERE l.id = ?
+    `).get(data.loadId) as any;
+    return row ? rowToLoad(row) : null;
+  });
+
+// ── Update load GPS location ────────────────────────────────────────────
+export const updateLoadLocation = createServerFn({ method: "POST" })
+  .validator(
+    (data: { loadId: string; locationLat: number; locationLng: number }) => data,
   )
   .handler(async ({ data }) => {
     const { getSessionUser } = await import("~/auth.server");
@@ -139,18 +222,33 @@ export const advanceLoadStatus = createServerFn({ method: "POST" })
 
     const db = getDb();
     const now = new Date().toISOString();
-    const result = db.prepare(`
-      UPDATE loads SET status = ?, updated_at = ? WHERE id = ? AND carrier_id = ?
-    `).run(data.status, now, data.loadId, user.id);
+    db.prepare(`
+      UPDATE loads SET current_location_lat = ?, current_location_lng = ?, updated_at = ?
+      WHERE id = ? AND carrier_id = ?
+    `).run(data.locationLat, data.locationLng, now, data.loadId, user.id);
 
-    if (result.changes === 0) return null;
+    return { success: true };
+  });
 
-    const row = db.prepare(`
-      SELECT l.*, s.name as shipper_name, c.name as carrier_name
-      FROM loads l JOIN users s ON s.id = l.shipper_id LEFT JOIN users c ON c.id = l.carrier_id
-      WHERE l.id = ?
-    `).get(data.loadId) as any;
-    return row ? rowToLoad(row) : null;
+// ── Fetch status history for a load ─────────────────────────────────────
+export const fetchStatusHistory = createServerFn({ method: "GET" })
+  .validator((loadId: string) => loadId)
+  .handler(async ({ data: loadId }) => {
+    const { getDb } = await import("~/db");
+    const db = getDb();
+    const rows = db.prepare(`
+      SELECT * FROM status_history WHERE load_id = ? ORDER BY timestamp ASC
+    `).all(loadId) as any[];
+
+    return rows.map((r: any) => ({
+      id: r.id,
+      loadId: r.load_id,
+      status: r.status,
+      timestamp: r.timestamp,
+      locationLat: r.location_lat,
+      locationLng: r.location_lng,
+      notes: r.notes,
+    })) as StatusHistoryEntry[];
   });
 
 // ── Helper: map DB row to client Load type ──────────────────────────────
@@ -172,5 +270,9 @@ function rowToLoad(row: any): Load {
     createdAt: row.created_at,
     originCoords: { lat: row.origin_lat, lng: row.origin_lng },
     destCoords: { lat: row.dest_lat, lng: row.dest_lng },
+    currentLocation:
+      row.current_location_lat != null && row.current_location_lng != null
+        ? { lat: row.current_location_lat, lng: row.current_location_lng }
+        : null,
   };
 }

@@ -57,6 +57,8 @@ export interface UserRow {
   created_at: string;
 }
 
+export type LoadStatus = "posted" | "accepted" | "departed" | "in-transit" | "border-crossing" | "arrived" | "delivered";
+
 export interface LoadRow {
   id: string;
   shipper_id: string;
@@ -71,10 +73,22 @@ export interface LoadRow {
   pickup_date: string;
   delivery_deadline: string;
   notes: string;
-  status: "posted" | "accepted" | "in-transit" | "delivered";
+  status: LoadStatus;
   carrier_id: string | null;
+  current_location_lat: number | null;
+  current_location_lng: number | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface StatusHistoryRow {
+  id: string;
+  load_id: string;
+  status: string;
+  timestamp: string;
+  location_lat: number | null;
+  location_lng: number | null;
+  notes: string | null;
 }
 
 export interface SessionRow {
@@ -147,10 +161,22 @@ function initSchema(db: any) {
       pickup_date TEXT NOT NULL,
       delivery_deadline TEXT NOT NULL,
       notes TEXT NOT NULL DEFAULT '',
-      status TEXT NOT NULL DEFAULT 'posted' CHECK(status IN ('posted', 'accepted', 'in-transit', 'delivered')),
+      status TEXT NOT NULL DEFAULT 'posted' CHECK(status IN ('posted', 'accepted', 'departed', 'in-transit', 'border-crossing', 'arrived', 'delivered')),
       carrier_id TEXT REFERENCES users(id),
+      current_location_lat REAL,
+      current_location_lng REAL,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS status_history (
+      id TEXT PRIMARY KEY,
+      load_id TEXT NOT NULL REFERENCES loads(id) ON DELETE CASCADE,
+      status TEXT NOT NULL,
+      timestamp TEXT NOT NULL DEFAULT (datetime('now')),
+      location_lat REAL,
+      location_lng REAL,
+      notes TEXT
     );
   `);
 }
