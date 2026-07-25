@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect, useCallback } from "react";
 import { fetchLoads, takeLoad, type Load } from "~/api";
 import { MapView } from "~/components/MapView";
+import { StatusBadge } from "~/components/StatusBadge";
 
 export const Route = createFileRoute("/carrier")({
   component: CarrierPortal,
@@ -65,25 +66,6 @@ function CarrierPortal() {
     } finally {
       setAccepting(false);
     }
-  };
-
-  const statusBadge = (status: string) => {
-    const colors: Record<string, string> = {
-      posted: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
-      accepted:
-        "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300",
-      "in-transit":
-        "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300",
-      delivered:
-        "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300",
-    };
-    return (
-      <span
-        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${colors[status] || "bg-gray-100 text-gray-800"}`}
-      >
-        {status}
-      </span>
-    );
   };
 
   return (
@@ -292,7 +274,7 @@ function CarrierPortal() {
                             <h3 className="font-semibold text-gray-900 dark:text-white">
                               {load.origin} → {load.destination}
                             </h3>
-                            {statusBadge(load.status)}
+                            <StatusBadge status={load.status} />
                           </div>
                           <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500 dark:text-gray-400">
                             <span className="capitalize">{load.cargoType}</span>
@@ -441,29 +423,32 @@ function CarrierPortal() {
                   </svg>
                 </div>
               ) : myTrips.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-gray-300 py-16 text-center dark:border-gray-700">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="mx-auto h-12 w-12 text-gray-300 dark:text-gray-600"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={1}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"
-                    />
-                  </svg>
-                  <p className="mt-4 text-gray-500 dark:text-gray-400">
-                    You haven&apos;t accepted any loads yet.
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <div className="mb-4 rounded-2xl bg-gray-800 p-4 text-gray-500">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-8 w-8"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={1.5}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-300">No trips yet</h3>
+                  <p className="mt-2 max-w-sm text-sm text-gray-500">
+                    Loads you accept will appear here. Browse available loads to get started.
                   </p>
                   <button
                     onClick={() => setTab("browse")}
-                    className="mt-3 text-sm font-medium text-orange-500 hover:text-orange-600"
+                    className="mt-6 rounded-xl bg-orange-500 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-orange-500/25 hover:bg-orange-600 transition-all"
                   >
-                    Browse available loads
+                    Browse Available Loads
                   </button>
                 </div>
               ) : (
@@ -479,7 +464,7 @@ function CarrierPortal() {
                             <h3 className="font-semibold text-gray-900 dark:text-white">
                               {load.origin} → {load.destination}
                             </h3>
-                            {statusBadge(load.status)}
+                            <StatusBadge status={load.status} />
                           </div>
                           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                             <span className="capitalize">{load.cargoType}</span> ·{" "}

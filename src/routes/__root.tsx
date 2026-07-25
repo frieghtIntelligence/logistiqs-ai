@@ -21,7 +21,14 @@ export const Route = createRootRoute({
           "Connect shippers and carriers across Southern Africa. Post loads, find freight, and track shipments in real time.",
       },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
+    links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap",
+      },
+    ],
   }),
   notFoundComponent: () => (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-4">

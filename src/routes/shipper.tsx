@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { postLoad, fetchLoads, type Load } from "~/api";
+import { StatusBadge } from "~/components/StatusBadge";
 
 export const Route = createFileRoute("/shipper")({
   component: ShipperPortal,
@@ -95,26 +96,6 @@ function ShipperPortal() {
 
   const myLoads = loads.filter((l) => l.shipperName === shipperName);
 
-  const statusBadge = (status: string) => {
-    const colors: Record<string, string> = {
-      posted:
-        "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
-      accepted:
-        "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300",
-      "in-transit":
-        "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300",
-      delivered:
-        "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300",
-    };
-    return (
-      <span
-        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${colors[status] || "bg-gray-100 text-gray-800"}`}
-      >
-        {status}
-      </span>
-    );
-  };
-
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-8">
@@ -192,26 +173,26 @@ function ShipperPortal() {
           {tab === "post" && (
             <form
               onSubmit={handleSubmit}
-              className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-900 sm:p-8"
+              className="mx-auto max-w-2xl rounded-2xl border border-gray-800 bg-gray-900 p-6 sm:p-8"
             >
-              <h2 className="mb-6 text-xl font-semibold text-gray-900 dark:text-white">
+              <h2 className="mb-6 text-xl font-semibold text-white">
                 Load Details
               </h2>
               <div className="grid gap-5 sm:grid-cols-2">
                 <div className="sm:col-span-2">
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label className="block text-sm font-medium text-gray-300 mb-1.5">
                     Shipper
                   </label>
                   <input
                     type="text"
                     value={shipperName}
                     disabled
-                    className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
+                    className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm text-gray-400"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label className="block text-sm font-medium text-gray-300 mb-1.5">
                     Origin City / Town *
                   </label>
                   <input
@@ -220,12 +201,12 @@ function ShipperPortal() {
                     placeholder="e.g. Lusaka"
                     value={origin}
                     onChange={(e) => setOrigin(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500"
+                    className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm text-white placeholder:text-gray-500 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 focus:outline-none transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label className="block text-sm font-medium text-gray-300 mb-1.5">
                     Destination City / Town *
                   </label>
                   <input
@@ -234,19 +215,19 @@ function ShipperPortal() {
                     placeholder="e.g. Johannesburg"
                     value={destination}
                     onChange={(e) => setDestination(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500"
+                    className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm text-white placeholder:text-gray-500 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 focus:outline-none transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label className="block text-sm font-medium text-gray-300 mb-1.5">
                     Cargo Type *
                   </label>
                   <select
                     required
                     value={cargoType}
                     onChange={(e) => setCargoType(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                    className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm text-white focus:border-orange-500 focus:ring-1 focus:ring-orange-500 focus:outline-none transition-colors"
                   >
                     {CARGO_TYPES.map((ct) => (
                       <option key={ct} value={ct}>
@@ -257,7 +238,7 @@ function ShipperPortal() {
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label className="block text-sm font-medium text-gray-300 mb-1.5">
                     Weight (tons) *
                   </label>
                   <input
@@ -267,12 +248,12 @@ function ShipperPortal() {
                     max={80}
                     value={weight}
                     onChange={(e) => setWeight(Number(e.target.value))}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                    className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm text-white focus:border-orange-500 focus:ring-1 focus:ring-orange-500 focus:outline-none transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label className="block text-sm font-medium text-gray-300 mb-1.5">
                     Pickup Date *
                   </label>
                   <input
@@ -280,12 +261,12 @@ function ShipperPortal() {
                     required
                     value={pickupDate}
                     onChange={(e) => setPickupDate(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                    className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm text-white focus:border-orange-500 focus:ring-1 focus:ring-orange-500 focus:outline-none transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label className="block text-sm font-medium text-gray-300 mb-1.5">
                     Delivery Deadline *
                   </label>
                   <input
@@ -293,12 +274,12 @@ function ShipperPortal() {
                     required
                     value={deliveryDeadline}
                     onChange={(e) => setDeliveryDeadline(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                    className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm text-white focus:border-orange-500 focus:ring-1 focus:ring-orange-500 focus:outline-none transition-colors"
                   />
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label className="block text-sm font-medium text-gray-300 mb-1.5">
                     Notes
                   </label>
                   <textarea
@@ -306,19 +287,19 @@ function ShipperPortal() {
                     placeholder="Special requirements, loading info, contact details..."
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500"
+                    className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm text-white placeholder:text-gray-500 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 focus:outline-none transition-colors"
                   />
                 </div>
               </div>
 
-              <div className="mt-8 flex items-center justify-between border-t border-gray-100 pt-6 dark:border-gray-800">
+              <div className="mt-8 flex items-center justify-between border-t border-gray-800 pt-6">
                 <p className="text-xs text-gray-500">
                   Your load will be visible to all carriers on the platform.
                 </p>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-orange-500/25 hover:bg-orange-600 transition-all disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {submitting ? (
                     <>
@@ -377,29 +358,32 @@ function ShipperPortal() {
                   </svg>
                 </div>
               ) : myLoads.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-gray-300 py-16 text-center dark:border-gray-700">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="mx-auto h-12 w-12 text-gray-300 dark:text-gray-600"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={1}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M3 7.5L12 3l9 4.5M3 7.5v9l9 4.5 9-4.5v-9M3 7.5l9 4.5 9-4.5"
-                    />
-                  </svg>
-                  <p className="mt-4 text-gray-500 dark:text-gray-400">
-                    You haven&apos;t posted any loads yet.
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <div className="mb-4 rounded-2xl bg-gray-800 p-4 text-gray-500">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-8 w-8"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={1.5}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M3 7.5L12 3l9 4.5M3 7.5v9l9 4.5 9-4.5v-9M3 7.5l9 4.5 9-4.5"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-300">No loads yet</h3>
+                  <p className="mt-2 max-w-sm text-sm text-gray-500">
+                    Loads you post will appear here. Ready to move your first shipment?
                   </p>
                   <button
                     onClick={() => setTab("post")}
-                    className="mt-3 text-sm font-medium text-orange-500 hover:text-orange-600"
+                    className="mt-6 rounded-xl bg-orange-500 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-orange-500/25 hover:bg-orange-600 transition-all"
                   >
-                    + Post your first load
+                    Post Your First Load
                   </button>
                 </div>
               ) : (
@@ -415,7 +399,7 @@ function ShipperPortal() {
                             <h3 className="font-semibold text-gray-900 dark:text-white">
                               {load.origin} → {load.destination}
                             </h3>
-                            {statusBadge(load.status)}
+                            <StatusBadge status={load.status} />
                           </div>
                           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                             {load.cargoType} · {load.weight}t · Pickup:{" "}
