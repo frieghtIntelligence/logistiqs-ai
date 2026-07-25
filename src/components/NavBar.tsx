@@ -17,21 +17,21 @@ export function NavBar() {
           <Link
             to="/"
             className="rounded-lg px-3.5 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
-            activeProps={{ className: "bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100" }}
+            activeProps={{ className: "text-orange-500 dark:text-orange-400" }}
           >
             Home
           </Link>
           <Link
             to="/shipper"
             className="rounded-lg px-3.5 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
-            activeProps={{ className: "bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100" }}
+            activeProps={{ className: "text-orange-500 dark:text-orange-400" }}
           >
             Ship Freight
           </Link>
           <Link
             to="/carrier"
             className="rounded-lg px-3.5 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
-            activeProps={{ className: "bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100" }}
+            activeProps={{ className: "text-orange-500 dark:text-orange-400" }}
           >
             Find Loads
           </Link>
