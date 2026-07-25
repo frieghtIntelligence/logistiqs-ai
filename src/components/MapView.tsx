@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import type { Load } from "~/store";
+import type { Load } from "~/api";
 
 interface MapViewProps {
   loads: Load[];
