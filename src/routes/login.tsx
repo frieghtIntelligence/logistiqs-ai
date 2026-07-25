@@ -37,18 +37,18 @@ function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-[calc(100dvh-57px)] items-center justify-center px-4 py-12">
+    <div className="flex min-h-dvh items-center justify-center px-4 py-8 md:py-12">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
+        <div className="text-center mb-6 md:mb-8">
           <Link to="/" className="inline-flex items-center gap-2.5 group">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-500 text-white font-bold text-sm shadow-sm">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500 text-white font-bold text-sm shadow-sm">
               LI
             </div>
-            <span className="text-lg font-bold tracking-tight text-gray-900 dark:text-white">
+            <span className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
               LOGISTIQS<span className="text-orange-500">IQ</span>
             </span>
           </Link>
-          <h1 className="mt-6 text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="mt-5 text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">
             Welcome back
           </h1>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
@@ -58,10 +58,10 @@ function LoginPage() {
 
         <form
           onSubmit={handleSubmit}
-          className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900 sm:p-8"
+          className="rounded-2xl border border-gray-800 bg-gray-900 p-6 sm:p-8"
         >
           {error && (
-            <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300">
+            <div className="mb-6 rounded-lg border border-red-800 bg-red-900/30 px-4 py-3 text-sm text-red-300">
               {error}
             </div>
           )}
@@ -70,7 +70,7 @@ function LoginPage() {
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+                className="block text-sm font-medium text-gray-300 mb-1.5"
               >
                 Email address
               </label>
@@ -82,14 +82,14 @@ function LoginPage() {
                 placeholder="you@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500"
+                className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-3 text-base text-white placeholder:text-gray-500 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 focus:outline-none transition-colors"
               />
             </div>
 
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+                className="block text-sm font-medium text-gray-300 mb-1.5"
               >
                 Password
               </label>
@@ -101,18 +101,18 @@ function LoginPage() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500"
+                className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-3 text-base text-white placeholder:text-gray-500 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 focus:outline-none transition-colors"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-orange-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-500/25 transition-all hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full rounded-xl bg-orange-500 px-4 py-3.5 text-base font-semibold text-white shadow-lg shadow-orange-500/25 transition-all hover:bg-orange-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 min-h-[52px]"
             >
               {loading ? (
                 <span className="inline-flex items-center gap-2">
-                  <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
@@ -124,15 +124,15 @@ function LoginPage() {
             </button>
           </div>
 
-          <div className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
+          <div className="mt-6 text-center text-sm text-gray-500">
             Don&apos;t have an account?{" "}
             <Link to="/signup" className="font-medium text-orange-500 hover:text-orange-400">
               Create one
             </Link>
           </div>
 
-          <div className="mt-4 rounded-lg bg-gray-50 p-3 text-xs text-gray-500 dark:bg-gray-800 dark:text-gray-500">
-            <p className="font-medium mb-1">Demo accounts (password: password123)</p>
+          <div className="mt-4 rounded-lg bg-gray-800 p-3 text-xs text-gray-500">
+            <p className="font-medium text-gray-400 mb-1">Demo accounts (password: password123)</p>
             <p>Shipper: kansanshi@example.com</p>
             <p>Carrier: crossborder@example.com</p>
           </div>
