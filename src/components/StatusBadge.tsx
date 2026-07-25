@@ -24,7 +24,6 @@ export function StatusBadge({ status }: StatusBadgeProps) {
     text: "text-gray-400",
     pulse: false,
   };
-
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${colors.bg} ${colors.text}`}
