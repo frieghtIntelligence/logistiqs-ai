@@ -6,7 +6,7 @@ export const Route = createFileRoute("/")({
 
 function LandingPage() {
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col pb-16 md:pb-0">
       {/* ── Hero ──────────────────────────────────────────── */}
       <section className="relative overflow-hidden bg-gradient-to-br from-gray-900 via-gray-950 to-gray-900">
         {/* Subtle grid pattern overlay */}
@@ -18,6 +18,12 @@ function LandingPage() {
             backgroundSize: "60px 60px",
           }}
         />
+
+        {/* Radial glow behind headline */}
+        <div className="absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2">
+          <div className="h-72 w-72 rounded-full bg-orange-500/5 blur-3xl sm:h-96 sm:w-96" />
+        </div>
+
         <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
           <div className="mx-auto max-w-3xl text-center">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-4 py-1.5 text-sm font-medium text-orange-400">
@@ -28,9 +34,9 @@ function LandingPage() {
               Now connecting Southern Africa
             </div>
             <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">
-              Smart Freight for{" "}
+              Southern Africa&apos;s Freight{" "}
               <span className="bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">
-                Southern Africa
+                Moves Here
               </span>
             </h1>
             <p className="mt-6 text-lg leading-relaxed text-gray-300 sm:text-xl">
@@ -41,7 +47,7 @@ function LandingPage() {
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link
-                to="/shipper"
+                to="/signup"
                 className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-orange-500/25 transition-all hover:bg-orange-600 hover:shadow-orange-500/40 sm:w-auto"
               >
                 <svg
@@ -58,10 +64,10 @@ function LandingPage() {
                     d="M12 4v16m8-8H4"
                   />
                 </svg>
-                Post a Load
+                Post Your First Load — Free
               </Link>
               <Link
-                to="/carrier"
+                to="/signup"
                 className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-600 bg-white/10 px-8 py-3.5 text-base font-semibold text-white backdrop-blur transition-all hover:border-gray-500 hover:bg-white/20 sm:w-auto"
               >
                 <svg
@@ -78,9 +84,33 @@ function LandingPage() {
                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                   />
                 </svg>
-                Find Loads
+                Find Backhaul Loads
               </Link>
             </div>
+            <p className="mt-6 text-sm text-gray-500">
+              200+ carriers active · 8 countries · Free to post
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Stats Row ─────────────────────────────────────── */}
+      <section className="border-b border-gray-800 bg-gray-950 py-12">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
+            {[
+              { value: "8", label: "Countries" },
+              { value: "200+", label: "Carriers" },
+              { value: "1,200+", label: "Loads" },
+              { value: "99.2%", label: "On-Time" },
+            ].map((stat) => (
+              <div key={stat.label} className="text-center">
+                <div className="text-3xl font-bold text-orange-500">
+                  {stat.value}
+                </div>
+                <div className="mt-1 text-sm text-gray-500">{stat.label}</div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -226,6 +256,63 @@ function LandingPage() {
         </div>
       </section>
 
+      {/* ── Mid-Page CTA Strip ────────────────────────────── */}
+      <section className="bg-gray-950 py-16 sm:py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="rounded-2xl bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-800 p-10 text-center">
+            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+              Ready to move smarter?
+            </h2>
+            <p className="mt-4 text-lg text-gray-400">
+              Join the platform that&apos;s transforming freight across Southern
+              Africa.
+            </p>
+            <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
+              <Link
+                to="/signup"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-orange-500/25 transition-all hover:bg-orange-600 hover:shadow-orange-500/40 sm:w-auto"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+                Create Free Account
+              </Link>
+              <Link
+                to="/signup"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-600 bg-white/10 px-8 py-3.5 text-base font-semibold text-white backdrop-blur transition-all hover:border-gray-500 hover:bg-white/20 sm:w-auto"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+                Browse Available Loads
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── Cargo Types ─────────────────────────────────── */}
       <section className="bg-white py-20 dark:bg-gray-950 sm:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -262,6 +349,63 @@ function LandingPage() {
         </div>
       </section>
 
+      {/* ── Closing CTA Section ───────────────────────────── */}
+      <section className="bg-gray-50 py-20 dark:bg-gray-900/50 sm:py-28">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
+              Start moving freight today
+            </h2>
+            <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
+              Join hundreds of shippers and carriers already using LOGISTIQS
+              INTELLIGENCE to move freight smarter across Southern Africa.
+            </p>
+            <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+              <Link
+                to="/signup"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-orange-500/25 transition-all hover:bg-orange-600 hover:shadow-orange-500/40 sm:w-auto"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+                Create Free Account
+              </Link>
+              <Link
+                to="/signup"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-600 bg-white/10 px-8 py-3.5 text-base font-semibold text-gray-900 backdrop-blur transition-all hover:border-gray-500 hover:bg-white/20 dark:text-white"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+                Browse Loads
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── Footer ──────────────────────────────────────── */}
       <footer className="border-t border-gray-200 bg-gray-50 py-10 dark:border-gray-800 dark:bg-gray-900/80">
         <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
@@ -271,6 +415,24 @@ function LandingPage() {
           </p>
         </div>
       </footer>
+
+      {/* ── Mobile Sticky Bottom Bar ──────────────────────── */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-800 bg-gray-950/95 p-3 backdrop-blur md:hidden">
+        <div className="flex gap-3">
+          <Link
+            to="/signup"
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-500/25 transition-all hover:bg-orange-600"
+          >
+            Post a Load — Free
+          </Link>
+          <Link
+            to="/signup"
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-600 bg-white/10 px-4 py-3 text-sm font-semibold text-white backdrop-blur transition-all hover:border-gray-500 hover:bg-white/20"
+          >
+            Find Loads
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
