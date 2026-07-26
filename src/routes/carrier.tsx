@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect, useCallback } from "react";
 import {
   fetchLoads,
+  fetchRankedLoads,
   takeLoad,
   advanceLoadStatus,
   submitProofOfDelivery,
@@ -11,6 +12,7 @@ import {
 import { getCurrentUser, logout } from "~/auth";
 import { MapView } from "~/components/MapView";
 import { StatusBadge } from "~/components/StatusBadge";
+import { MatchScoreBadge } from "~/components/MatchScoreBadge";
 import { BottomNav } from "~/components/BottomNav";
 import { ProofOfDelivery } from "~/components/ProofOfDelivery";
 
@@ -60,10 +62,24 @@ function CarrierPortal() {
 
   const refreshLoads = useCallback(async () => {
     try {
+      // Use AI-ranked loads for browse — returns loads sorted by match score
+      const ranked = await fetchRankedLoads();
+      // Also fetch all loads for trips (includes accepted, in-transit, etc.)
       const all = await fetchLoads();
-      setLoads(all);
+      // Merge: use ranked loads for posted, keep all loads for trip reference
+      const postedLoads = ranked.loads || [];
+      const nonPostedLoads = all.filter((l) => l.status !== "posted");
+      // Combine: ranked posted loads first, then non-posted
+      setLoads([...postedLoads, ...nonPostedLoads]);
     } catch (e) {
-      console.error("fetchLoads error:", e);
+      console.error("refreshLoads error:", e);
+      // Fallback to normal fetch
+      try {
+        const all = await fetchLoads();
+        setLoads(all);
+      } catch (e2) {
+        console.error("fallback fetch error:", e2);
+      }
     }
   }, []);
 
@@ -326,16 +342,22 @@ function CarrierPortal() {
           ) : (
             /* ── LOAD CARDS ─────────────────── */
             <div className="space-y-3">
-              {availableLoads.map((load) => {
+              {availableLoads.map((load, idx) => {
                 const isAccepting = accepting === load.id;
                 const isSelected = selectedLoad?.id === load.id;
+                const isTopMatch = idx < 5; // top 5 scored loads
+                const isGold = idx < 3; // top 3 get gold highlight
+                const hasBackhaul = load.isBackhaul === true;
+                const matchScore = load.matchScore ?? 0;
                 return (
                   <div
                     key={load.id}
                     className={`rounded-2xl border bg-gray-900 transition-all ${
                       isSelected
                         ? "border-orange-500 ring-2 ring-orange-500/20"
-                        : "border-gray-800 hover:border-gray-700"
+                        : isGold
+                          ? "border-amber-500/50 ring-1 ring-amber-400/20"
+                          : "border-gray-800 hover:border-gray-700"
                     }`}
                   >
                     {/* Card header — always visible, tappable */}
@@ -345,12 +367,32 @@ function CarrierPortal() {
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <span className="text-sm font-semibold uppercase text-orange-400">
                               {load.cargoType}
                             </span>
                             <span className="text-sm text-gray-400">— {load.weight}t</span>
                             <StatusBadge status={load.status} />
+                          </div>
+                          {/* Match badges row */}
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            {matchScore > 0 && (
+                              <MatchScoreBadge
+                                score={matchScore}
+                                size="sm"
+                                highlight={isGold}
+                              />
+                            )}
+                            {isTopMatch && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-400">
+                                ⭐ Best Match
+                              </span>
+                            )}
+                            {hasBackhaul && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-400">
+                                🔄 Backhaul Opportunity
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-center gap-2 text-sm">
                             <span className="font-medium text-white truncate">{load.origin}</span>
@@ -682,6 +724,13 @@ function CarrierPortal() {
               </div>
             </div>
           </div>
+
+          <a
+            href="/carrier-settings"
+            className="block w-full rounded-xl border border-gray-700 bg-gray-800 py-3.5 text-center text-sm font-semibold text-gray-300 hover:bg-gray-700 transition-colors min-h-[48px]"
+          >
+            ⚙️ Matching Preferences
+          </a>
 
           <button
             onClick={handleLogout}

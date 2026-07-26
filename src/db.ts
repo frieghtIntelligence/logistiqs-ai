@@ -54,6 +54,8 @@ export interface UserRow {
   name: string;
   role: "shipper" | "carrier";
   company_name: string;
+  preferences: string | null;  // JSON blob: { homeCity, preferredCargoTypes, preferredRegions }
+  on_time_rate: number;        // 0.85–0.98 simulated on-time performance
   created_at: string;
 }
 
@@ -146,6 +148,8 @@ function initSchema(db: any) {
       name TEXT NOT NULL,
       role TEXT NOT NULL CHECK(role IN ('shipper', 'carrier')),
       company_name TEXT NOT NULL,
+      preferences TEXT,
+      on_time_rate REAL NOT NULL DEFAULT 0.90,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
@@ -219,18 +223,24 @@ function seedIfEmpty(db: any) {
   const passwordHash = hashSync("password123");
 
   const insertUser = db.prepare(
-    "INSERT INTO users (id, email, password_hash, name, role, company_name, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
+    "INSERT INTO users (id, email, password_hash, name, role, company_name, preferences, on_time_rate, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
   );
 
-  // 3 shippers
-  insertUser.run("u-s1", "kansanshi@example.com", passwordHash, "Mining Ops", "shipper", "Kansanshi Mining PLC", now);
-  insertUser.run("u-s2", "sasol@example.com", passwordHash, "Fuel Desk", "shipper", "Sasol", now);
-  insertUser.run("u-s3", "grain@example.com", passwordHash, "Co-op Logistics", "shipper", "GrainSA Co-op", now);
+  // 3 shippers (no preferences needed)
+  insertUser.run("u-s1", "kansanshi@example.com", passwordHash, "Mining Ops", "shipper", "Kansanshi Mining PLC", null, 0.90, now);
+  insertUser.run("u-s2", "sasol@example.com", passwordHash, "Fuel Desk", "shipper", "Sasol", null, 0.90, now);
+  insertUser.run("u-s3", "grain@example.com", passwordHash, "Co-op Logistics", "shipper", "GrainSA Co-op", null, 0.90, now);
 
-  // 3 carriers
-  insertUser.run("u-c1", "crossborder@example.com", passwordHash, "Cross-Border Fleet", "carrier", "Cross-Border Hauliers Ltd", now);
-  insertUser.run("u-c2", "transafrica@example.com", passwordHash, "TransAfrica Transport", "carrier", "TransAfrica Transport", now);
-  insertUser.run("u-c3", "southern@example.com", passwordHash, "Southern Routes", "carrier", "Southern Routes Logistics", now);
+  // 3 carriers (with preferences and on-time rates)
+  insertUser.run("u-c1", "crossborder@example.com", passwordHash, "Cross-Border Fleet", "carrier", "Cross-Border Hauliers Ltd",
+    JSON.stringify({ homeCity: "Lusaka", preferredCargoTypes: ["copper", "machinery", "general freight"], preferredRegions: ["SA", "Zim", "Zam"] }),
+    0.94, now);
+  insertUser.run("u-c2", "transafrica@example.com", passwordHash, "TransAfrica Transport", "carrier", "TransAfrica Transport",
+    JSON.stringify({ homeCity: "Johannesburg", preferredCargoTypes: ["fuel", "general freight", "grain"], preferredRegions: ["SA", "Bots", "Nam", "Moz"] }),
+    0.97, now);
+  insertUser.run("u-c3", "southern@example.com", passwordHash, "Southern Routes", "carrier", "Southern Routes Logistics",
+    JSON.stringify({ homeCity: "Durban", preferredCargoTypes: ["grain", "fuel", "cement", "steel"], preferredRegions: ["SA", "Zim", "Moz"] }),
+    0.88, now);
 
   // Seed loads
   const seedLoads = [
@@ -303,6 +313,38 @@ function seedIfEmpty(db: any) {
       pickup_date: "2026-08-08",
       delivery_deadline: "2026-08-10",
       notes: "Crushing equipment parts. Covered transport.",
+    },
+    // Backhaul-friendly loads for demo
+    {
+      shipper_id: "u-s3",
+      origin: "Harare",
+      destination: "Lusaka",
+      cargo_type: "grain",
+      weight_tons: 30,
+      pickup_date: "2026-07-31",
+      delivery_deadline: "2026-08-04",
+      notes: "🔄 Backhaul-friendly: destination near carrier home. Maize export to Zambia. Bulk tipper.",
+    },
+    {
+      shipper_id: "u-s2",
+      origin: "Polokwane",
+      destination: "Durban",
+      cargo_type: "fuel",
+      weight_tons: 34,
+      pickup_date: "2026-08-01",
+      delivery_deadline: "2026-08-03",
+      notes: "🔄 Backhaul-friendly: Durban-bound tanker. Empty return avoidance opportunity.",
+    },
+    // Far-future load to demonstrate timeline scoring
+    {
+      shipper_id: "u-s1",
+      origin: "Kitwe",
+      destination: "Johannesburg",
+      cargo_type: "copper",
+      weight_tons: 26,
+      pickup_date: "2026-09-15",
+      delivery_deadline: "2026-09-22",
+      notes: "Future copper shipment. Advance booking — flexible timeline.",
     },
   ];
 
