@@ -24,6 +24,36 @@ export interface Load {
   originCoords: { lat: number; lng: number };
   destCoords: { lat: number; lng: number };
   currentLocation: { lat: number; lng: number } | null;
+  // Matching metadata (set by fetchRankedLoads)
+  matchScore?: number;
+  matchBreakdown?: { routeProximity: number; cargoMatch: number; backhaulPotential: number; timelineFit: number };
+  isBackhaul?: boolean;
+}
+
+export interface ScoredLoad {
+  loadId: string;
+  score: number;
+  isBackhaul: boolean;
+  breakdown: {
+    routeProximity: number;
+    cargoMatch: number;
+    backhaulPotential: number;
+    timelineFit: number;
+  };
+}
+
+export interface CarrierSuggestion {
+  carrierId: string;
+  carrierName: string;
+  companyName: string;
+  onTimeRate: number;
+  score: number;
+  breakdown: {
+    routeFamiliarity: number;
+    onTimeScore: number;
+    cargoExperience: number;
+    proximityToOrigin: number;
+  };
 }
 
 export interface StatusHistoryEntry {
@@ -335,6 +365,207 @@ export const fetchProofOfDelivery = createServerFn({ method: "GET" })
       createdAt: row.created_at,
     } as ProofOfDelivery;
   });
+
+// ── AI Matching: Fetch ranked loads for a carrier ─────────────────────────
+export const fetchRankedLoads = createServerFn({ method: "GET" }).handler(async () => {
+  const { getSessionUser } = await import("~/auth.server");
+  const { getDb } = await import("~/db");
+  const { rankLoadsForCarrier } = await import("~/matching");
+  const user = getSessionUser();
+  if (!user || user.role !== "carrier") {
+    throw new Error("You must be logged in as a carrier.");
+  }
+
+  const db = getDb();
+
+  // Get carrier preferences
+  const carrier = db.prepare("SELECT preferences, company_name FROM users WHERE id = ?").get(user.id) as any;
+  const prefs = carrier?.preferences ? JSON.parse(carrier.preferences) : null;
+  const homeCity = prefs?.homeCity || undefined;
+
+  // Fetch only posted loads
+  const rows = db.prepare(`
+    SELECT l.*, s.name as shipper_name, c.name as carrier_name
+    FROM loads l JOIN users s ON s.id = l.shipper_id LEFT JOIN users c ON c.id = l.carrier_id
+    WHERE l.status = 'posted'
+    ORDER BY l.created_at DESC
+  `).all() as any[];
+
+  if (rows.length === 0) return { loads: [], scored: [] };
+
+  const loadsForScoring = rows.map((r: any) => ({
+    id: r.id,
+    originLat: r.origin_lat,
+    originLng: r.origin_lng,
+    destLat: r.dest_lat,
+    destLng: r.dest_lng,
+    cargoType: r.cargo_type,
+    pickupDate: r.pickup_date,
+  }));
+
+  const scored = rankLoadsForCarrier(loadsForScoring, prefs, homeCity);
+
+  // Build score lookup
+  const scoreMap = new Map<string, (typeof scored)[0]>();
+  for (const s of scored) {
+    scoreMap.set(s.loadId, s);
+  }
+
+  // Build sorted loads array matching scored order
+  const loads = scored
+    .map((s) => {
+      const row = rows.find((r: any) => r.id === s.loadId);
+      if (!row) return null;
+      const load = rowToLoad(row);
+      load.matchScore = s.score;
+      load.matchBreakdown = s.breakdown;
+      load.isBackhaul = s.isBackhaul;
+      return load;
+    })
+    .filter(Boolean) as Load[];
+
+  return { loads, scored };
+});
+
+// ── AI Matching: Suggest carriers for a shipper's load ────────────────────
+export const suggestCarriersForLoad = createServerFn({ method: "GET" })
+  .validator((loadId: string) => loadId)
+  .handler(async ({ data: loadId }) => {
+    const { getSessionUser } = await import("~/auth.server");
+    const { getDb } = await import("~/db");
+    const { suggestCarriersForLoad: matchCarriers } = await import("~/matching");
+    const user = getSessionUser();
+    if (!user || user.role !== "shipper") {
+      throw new Error("You must be logged in as a shipper.");
+    }
+
+    const db = getDb();
+
+    // Get the load
+    const load = db.prepare("SELECT * FROM loads WHERE id = ? AND shipper_id = ?").get(loadId, user.id) as any;
+    if (!load) throw new Error("Load not found.");
+
+    // Get all carriers with their preferences
+    const carriers = db.prepare(
+      "SELECT id, name, company_name, preferences, on_time_rate FROM users WHERE role = 'carrier'",
+    ).all() as any[];
+
+    const carriersForSuggestion = carriers.map((c: any) => ({
+      id: c.id,
+      name: c.name,
+      companyName: c.company_name,
+      onTimeRate: c.on_time_rate,
+      preferences: c.preferences ? JSON.parse(c.preferences) : null,
+    }));
+
+    const suggestions = matchCarriers(
+      carriersForSuggestion,
+      load.origin_lat,
+      load.origin_lng,
+      load.cargo_type,
+      load.origin,
+    );
+
+    return suggestions.slice(0, 3) as CarrierSuggestion[];
+  });
+
+// ── Carrier: Update preferences ────────────────────────────────────────────
+export const updateCarrierPreferences = createServerFn({ method: "POST" })
+  .validator(
+    (data: {
+      homeCity: string;
+      preferredCargoTypes: string[];
+      preferredRegions: string[];
+    }) => data,
+  )
+  .handler(async ({ data }) => {
+    const { getSessionUser } = await import("~/auth.server");
+    const { getDb } = await import("~/db");
+    const user = getSessionUser();
+    if (!user || user.role !== "carrier") {
+      throw new Error("You must be logged in as a carrier.");
+    }
+
+    const db = getDb();
+    const prefs = JSON.stringify({
+      homeCity: data.homeCity.trim(),
+      preferredCargoTypes: data.preferredCargoTypes,
+      preferredRegions: data.preferredRegions,
+    });
+
+    db.prepare("UPDATE users SET preferences = ? WHERE id = ?").run(prefs, user.id);
+    return { success: true, preferences: JSON.parse(prefs) };
+  });
+
+// ── Carrier: Fetch preferences ─────────────────────────────────────────────
+export const fetchCarrierPreferences = createServerFn({ method: "GET" }).handler(async () => {
+  const { getSessionUser } = await import("~/auth.server");
+  const { getDb } = await import("~/db");
+  const user = getSessionUser();
+  if (!user || user.role !== "carrier") {
+    throw new Error("You must be logged in as a carrier.");
+  }
+
+  const db = getDb();
+  const row = db.prepare("SELECT preferences, on_time_rate FROM users WHERE id = ?").get(user.id) as any;
+  const prefs = row?.preferences ? JSON.parse(row.preferences) : {
+    homeCity: "",
+    preferredCargoTypes: [],
+    preferredRegions: [],
+  };
+
+  return {
+    preferences: prefs,
+    onTimeRate: row?.on_time_rate ?? 0.90,
+  };
+});
+
+// ── Shipper: Fetch suggested carriers for all my unaccepted loads ──────────
+export const fetchAllLoadSuggestions = createServerFn({ method: "GET" }).handler(async () => {
+  const { getSessionUser } = await import("~/auth.server");
+  const { getDb } = await import("~/db");
+  const { suggestCarriersForLoad: matchCarriers } = await import("~/matching");
+  const user = getSessionUser();
+  if (!user || user.role !== "shipper") {
+    throw new Error("You must be logged in as a shipper.");
+  }
+
+  const db = getDb();
+
+  // Get all unaccepted loads for this shipper
+  const loads = db.prepare(
+    "SELECT * FROM loads WHERE shipper_id = ? AND status = 'posted'",
+  ).all(user.id) as any[];
+
+  if (loads.length === 0) return {};
+
+  // Get all carriers
+  const carriers = db.prepare(
+    "SELECT id, name, company_name, preferences, on_time_rate FROM users WHERE role = 'carrier'",
+  ).all() as any[];
+
+  const carriersForSuggestion = carriers.map((c: any) => ({
+    id: c.id,
+    name: c.name,
+    companyName: c.company_name,
+    onTimeRate: c.on_time_rate,
+    preferences: c.preferences ? JSON.parse(c.preferences) : null,
+  }));
+
+  const result: Record<string, CarrierSuggestion[]> = {};
+  for (const load of loads) {
+    const suggestions = matchCarriers(
+      carriersForSuggestion,
+      load.origin_lat,
+      load.origin_lng,
+      load.cargo_type,
+      load.origin,
+    );
+    result[load.id] = suggestions.slice(0, 3);
+  }
+
+  return result;
+});
 
 // ── Helper: map DB row to client Load type ──────────────────────────────
 function rowToLoad(row: any): Load {
