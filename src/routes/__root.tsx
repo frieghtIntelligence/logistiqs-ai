@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { NavBar } from "~/components/NavBar";
+import { Footer } from "~/components/Footer";
 
 import appCss from "~/styles/app.css?url";
 
@@ -46,6 +47,7 @@ function RootComponent() {
     <RootDocument>
       <NavBar />
       <Outlet />
+      <Footer />
     </RootDocument>
   );
 }
